@@ -10,7 +10,7 @@
     box-sizing: border-box;
     display: flex;
     flex-flow: row nowrap;
-    height: 30vh;
+    height: 60vh;
     justify-content: space-between;
     padding: 10px;
     width: 100%;
