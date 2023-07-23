@@ -1,0 +1,166 @@
+/* Layout */
+/*body {*/
+/*    line-height: 1.5rem;*/
+/*    overflow: hidden;*/
+/*}*/
+/* Page */
+.page {
+    align-items: stretch;
+    background-color: #231f20;
+    box-sizing: border-box;
+    display: flex;
+    flex-flow: row nowrap;
+    height: 30vh;
+    justify-content: space-between;
+    padding: 10px;
+    width: 100%;
+    border-radius: 10px;
+    margin-top: 5px;
+}
+.page-side {
+    background-color: #000;
+    width: 100%;
+    border-radius: 10px;
+    padding: 5px;
+}
+.page-side ~ .page-side {
+    margin-left: 10px;
+}
+#screen {
+    align-items: stretch;
+    box-sizing: border-box;
+    display: flex;
+    flex-flow: column nowrap;
+    font-family: "Lucida Console", monospace;
+    font-weight: 300;
+    justify-content: space-between;
+    padding: 5px;
+    position: relative;
+}
+#console {
+    align-items: stretch;
+    display: flex;
+    flex-flow: column nowrap;
+    font-family: "Source Code Pro", monospace;
+    justify-content: space-between;
+}
+/* Console */
+.console-title {
+    background-color: rgba(255, 213, 0, 0.25);
+    color: #787878;
+    flex: 0;
+    font-weight: 500;
+    text-align: center;
+}
+.console-log {
+    flex: 1;
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
+.console-log-line {
+    background-color: rgba(120, 120, 120, 0.25);
+    color: #787878;
+    font-weight: 500;
+    margin-top: 1px;
+    padding: 0 4px;
+}
+/* Render */
+.render {
+    /*background-image: linear-gradient(45deg, #787878 25%, transparent 25%, transparent 75%, #787878 75%, #787878), linear-gradient(45deg, #787878 25%, #ffd500 25%, #ffd500 75%, #787878 75%, #787878);*/
+    background-color: #333333;
+    background-size: 10px 10px;
+    background-position: 0 0, 5px 5px;
+    border-radius: 10px;
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+/* Menu */
+.menu {
+    position: relative;
+}
+/* Chat */
+.chat {
+    color: white;
+    display: flex;
+    flex-flow: column-reverse nowrap;
+    font-family: "Lucida Console", monospace;
+    justify-content: space-between;
+    margin: 0 auto;
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+.chat-input {
+    display: flex;
+    flex-flow: row nowrap;
+    height: 1.5rem;
+}
+.chat-input-text, .chat-input-submit, .chat-input-reset {
+    background-color: rgba(35, 31, 32, 0.85);
+    border-radius: 2px;
+}
+.chat-input-text {
+    border: 0;
+    color: inherit;
+    flex: 1;
+    font: inherit;
+    padding: 0 4px;
+}
+.chat-input-submit, .chat-input-reset {
+    appearance: none;
+    border: 0;
+    flex: 0;
+    font-family: "Lucida Console", monospace;
+    margin-left: 2px;
+    text-align: center;
+    width: 1.5rem;
+}
+.chat-input-submit {
+    color: darkseagreen;
+}
+.chat-input-reset {
+    /*content: "f51a";*/
+    color: palevioletred;
+}
+.chat-notification {
+    color: #d92030;
+}
+.chat-log {
+    background-color: rgba(35, 31, 32, 0.75);
+    /*background-image: linear-gradient(to top, rgba(0, 0, 0, 0.5), rgba(153, 153, 153, 0.25));*/
+    border-radius: 4px;
+    margin: 2px 0 2px;
+    /*max-height: 12rem;*/
+    overflow-x: hidden;
+    overflow-y: scroll;
+    padding-left: 10px;
+    text-indent: -10px;
+}
+.chat-log-line {
+    padding: 0 4px;
+    text-shadow: 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black;
+}
+.chat-log-line-timestamp::before {
+    content: "[";
+}
+.chat-log-line-timestamp::after {
+    content: "]";
+}
+.chat-log-line-user {
+    font-weight: 700;
+    margin: 0 10px;
+}
+.chat-log-line-text {
+    font-weight: 400;
+}
+/* UI */
+::-webkit-scrollbar {
+    background-color: rgba(0, 0, 0, 0.25);
+    width: 10px;
+}
+::-webkit-scrollbar-thumb {
+    background-color: #000;
+}
