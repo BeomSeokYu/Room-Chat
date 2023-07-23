@@ -20,11 +20,11 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
 	// JPA를 사용하기 위한 의존성
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+//	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
 	// MySQL 데이터베이스와 연동하기 위한 JDBC 드라이버
-	implementation 'com.mysql:mysql-connector-j:8.0.33'
-	implementation 'org.mariadb.jdbc:mariadb-java-client'
+//	implementation 'com.mysql:mysql-connector-j:8.0.33'
+//	implementation 'org.mariadb.jdbc:mariadb-java-client'
 
 	// Thymeleaf 템플릿 엔진 사용을 위한 의존성
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
