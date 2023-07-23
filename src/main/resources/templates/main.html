@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>yacht</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <!-- CSS only -->
+  <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/assets/css/die.css">
+  <link rel="stylesheet" href="/assets/css/chat.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark bg-dark sticky-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Yacht</a>
+    <span class="navbar-text px-2" id="clientRoomIdDiv"></span>
+    <span class="navbar-text px-2" id="clientIdDiv"></span>
+  </div>
+</nav>
+
+<main>
+  <div class="container">
+    <!-- 방 목록 -->
+    <div class="text-end">
+      <span class="badge bg-info"><span>Rooms:</span><span id="numOfRooms"></span></span>
+      <span class="badge bg-warning"><span>Players:</span><span id="numOfPlayers"></span></span>
+    </div>
+    <table class="table table-hover">
+      <thead>
+      <tr>
+        <th><h2>방 목록</h2></th>
+      </tr>
+      </thead>
+      <tbody id="roomList"></tbody>
+    </table>
+  </div>
+</main>
+
+<!-- 채팅 -->
+<article class="page position-fixed bottom-0 start-50 translate-middle-x">
+  <!--  <section class="page-side" id="console">-->
+  <!--    <h1 class="console-title">Console</h1>-->
+  <!--    <ol class="console-log"></ol>-->
+  <!--  </section>-->
+  <section class="page-side text-white overflow-scroll">
+    <!-- 방 생성 버튼 -->
+    <label for="createRoomName">Create Room</label>
+    <div>
+      <div class="input-group d-inline">
+        <input class="form-control-inline" type="text" size="15" id="createRoomName">
+        <button class="btn btn-secondary" id="createPublicRoomBtn">public</button>
+      </div>
+      <button class="btn btn-secondary" id="createPrivateRoomBtn">private</button>
+    </div>
+    <!-- 방 참여 버튼 -->
+    <label for="joinRoomName">Join Room</label>
+    <div>
+      <div class="input-group d-inline">
+        <input class="form-control-inline" type="text" size="15" id="joinRoomName">
+        <button class="btn btn-secondary" id="joinRoomBtn">Join</button>
+      </div>
+    </div>
+    <!-- 방 떠나기 버튼 -->
+    <div class="text-end me-3">
+      <button class="btn btn-outline-danger" id="leaveRoomBtn">leave Room</button>
+    </div>
+  </section>
+
+  <section class="page-side" id="screen">
+    <div class="render"></div>
+    <div class="menu"></div>
+    <div class="chat">
+      <form class="chat-input">
+        <input class="chat-input-text" type="text" />
+        <button class="chat-input-submit" type="submit"><i class="fa-regular fa-paper-plane"></i></button>
+        <button class="chat-input-reset" type="reset"><i class="fa-regular fa-trash-can"></i></button>
+      </form>
+      <ul class="chat-log"></ul>
+    </div>
+  </section>
+</article>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- JavaScript Bundle with Popper -->
+<script src="/assets/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+<!--<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>-->
+<script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+<script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
+<script type="text/javascript" src="/assets/js/script.js"></script>
+
+<script>
+  let stompClient = null;
+  let roomId = null;
+  let clientId = null;
+  let clientRoomId = null;
+  let isSubscribeRoomChat = false;
+
+  let joinRoomName = document.getElementById("joinRoomName");
+  let roomList = document.getElementById('roomList');
+  let numOfRooms = document.getElementById('numOfRooms');
+  let numOfPlayers = document.getElementById('numOfPlayers');
+  let clientRoomIdDiv = document.getElementById('clientRoomIdDiv');
+
+  /* 소켓 연결 */
+  function connect() {
+    let socket = new SockJS('/chat');
+    stompClient = Stomp.over(socket);
+    stompClient.connect({}, function (frame) {
+      console.log('Connected: ' + frame);
+      initSubscribe();
+      loadRoomList(); // 방 목록을 로드
+    });
+  }
+
+  /* 초기 구독 */
+  function initSubscribe() {
+    // 현재 전체 방의 수 메시지 받는 구독
+    stompClient.subscribe('/topic/total', function (message) {
+      let payload = JSON.parse(message.body)
+      numOfRooms.innerHTML = payload.room;
+      numOfPlayers.innerHTML = payload.player;
+    });
+
+    // 공개방 리스트 메시지 받는 구독
+    stompClient.subscribe('/topic/loadRoomList', function (message) {
+      console.log(message.body)
+      roomList.innerHTML = '';
+      if (message.body !== '{}') {
+        let rooms = JSON.parse(message.body)
+        let roomKeys = Object.keys(rooms)
+        for (let i = 0; i < roomKeys.length; i++) {
+          let list = document.createElement('tr');
+          let listItem = document.createElement('td');
+          listItem.innerHTML = roomKeys[i];
+          listItem.setAttribute('onclick', 'joinRoom("'+roomKeys[i]+'")');
+          listItem.setAttribute('style', 'cursor: pointer;');
+          list.append(listItem)
+          roomList.appendChild(list);
+        }
+      } else {
+        let list = document.createElement('tr');
+        let listItem = document.createElement('td');
+        listItem.innerHTML = '생성된 방 목록이 없습니다.';
+        list.append(listItem)
+        roomList.appendChild(list);
+      }
+    });
+    // 클라이언트에게 보내는 채팅창 메시지 구독
+    stompClient.subscribe('/topic/chat/' + clientId, function (message) {
+      let payload = JSON.parse(message.body);
+      showChat(payload.type, payload.message);
+    });
+    // 클라이언트에게 보내는 게임 관련 메시지 구독
+    stompClient.subscribe('/topic/game/' + clientId, function (message) {
+      let payload = JSON.parse(message.body);
+      switch (payload.type) {
+        case 'init' :
+          clientRoomId = payload.message;
+          clientRoomIdDiv.innerHTML = clientRoomId;
+          break;
+      }
+    });
+    // 클라이언트에게 보내는 비공개 방 관련 메시지 구독
+    stompClient.subscribe('/topic/createRoomInfo/' + clientId, function (message) {
+      let roomName = message.body;
+      subscribeRoomChat(roomName); // 채팅방 채팅 구독
+    });
+  }
+
+  /* 비회원 클라이언트 아이디 받아오기 */
+  function createId() {
+    fetch('/createId')
+      .then(response => response.text())
+      .then(data => {
+        console.log(data);
+        clientId = data;
+        document.getElementById('clientIdDiv').innerHTML = 'client ID : ' + clientId;
+      });
+  }
+
+  /* 소캣 연결 종료 */
+  function disconnect() {
+    if (stompClient !== null) {
+      stompClient.disconnect();
+    }
+    console.log("Disconnected");
+  }
+
+  /* 공개방 리스트 요청 */
+  function loadRoomList() {
+    roomList.innerHTML = '';
+    // 방 목록 요청 메시지 전송
+    stompClient.send("/app/loadRoomList", {});
+  }
+
+  /* 공개방 생성 */
+  function createPublicRoom() {
+    let roomName = document.getElementById('createRoomName').value;
+    // stompClient.subscribe('/topic/createRoom', function (message) {
+    //   console.log(JSON.parse(message.body).roomId);
+    // });
+    subscribeRoomChat(roomName); // 채팅방 채팅 구독
+    let createRoomName = document.getElementById('createRoomName').value;
+    if (createRoomName.trim() !== "") {
+      // 방 생성 메시지 전송
+      stompClient.send("/app/createPublicRoom/" + clientId + "/" + document.getElementById('createRoomName').value, {});
+    } else {
+      alert("방 이름을 입력해 주세요.");
+    }
+  }
+
+  /* 비공개방 생성 */
+  function createPrivateRoom() {
+    // 방 생성 메시지 전송
+    stompClient.send("/app/createPrivateRoom/" + clientId, {});
+  }
+
+  /* 방 전체에게 보내는 메시지 구독 */
+  function subscribeRoomChat(roomName) {
+    if (isSubscribeRoomChat) {
+      return;
+    }
+    isSubscribeRoomChat = true;
+    roomId = roomName;
+    // 채팅창 메시지 구독
+    stompClient.subscribe('/topic/chat/' + roomId, function (message) {
+      let payload = JSON.parse(message.body);
+      showChat(payload.type, payload.message);
+    });
+    // 게임 관련 메시지 구독
+    stompClient.subscribe('/topic/game/' + roomId, function (message) {
+      console.log(message.body);
+    });
+  }
+
+  /* 방에 참가 (room : 방 코드(이름)) */
+  function joinRoom(roomName) {
+    if (roomName) {
+      subscribeRoomChat(roomName); // 채팅방 채팅 구독
+      // 선택한 방에 참여 메시지 전송
+      stompClient.send("/app/joinRoom/" + roomId + "/" + clientId, {});
+    }
+  }
+
+  /* 게임 시작 */
+  function startGame() {
+    if (roomId) {
+      // 게임 시작 메시지 전송
+      stompClient.send("/app/startGame/" + roomId, {});
+    }
+  }
+
+  /* 채팅 메시지 전송 */
+  function sendChatMessage(message) {
+    let payload = JSON.stringify({
+      type:'chat',
+      message: message
+    });
+    stompClient.send("/app/chat/" + roomId + "/" + clientId, {}, payload);
+  }
+
+  /* 채팅 메시지 출력 */
+  function showChat(type, msg) {
+    console.log("log : " + msg);
+    let parsedMsg = msg.split(" - ");
+    const _time = parsedMsg[0];
+    const _user = parsedMsg[1];
+    const _message = parsedMsg[2];
+    let chatLog = document.querySelector('.chat-log');
+    chatLog.insertAdjacentHTML("beforeend", '<li class="chat-log-line">' +
+            '<span class="chat-log-line-timestamp">' + _time + '</span>' +
+            '<span class="chat-log-line-user">' + _user + '</span>' +
+            '<span class="chat-log-line-text'+(type === "system" ? " chat-notification":"")+'">' + _message + '</span></li>');
+    chatLog.scrollTop += 24;
+  }
+
+  /* 채팅창 메시지 지우기 */
+  function clearChat() {
+    document.querySelector('.chat-log').innerHTML='';
+  }
+
+  /* ===== ====== ===== */
+  /* ===== ONLOAD ===== */
+  /* ===== ====== ===== */
+  window.onload = function () {
+    /* 로그 출력 변경 */
+    // console.log = function(msg) {
+    //   document.querySelector('#console .console-log').insertAdjacentHTML("beforeend", '<li class="console-log-line">' + msg.toString() + '</li>')
+    // };
+
+    createId()      // client ID 생성
+    connect();      // 소켓 연결
+
+    /* ===== ============== ===== */
+    /* ===== EVENT LISTENER ===== */
+    /* ===== ============== ===== */
+
+    // 공개방 생성 버튼 클릭 이벤트
+    let createPublicRoomBtn = document.getElementById('createPublicRoomBtn');
+    createPublicRoomBtn.addEventListener('click', createPublicRoom);
+
+    // 비공개방 생성 버튼 클릭 이벤트
+    let createPrivateRoomBtn = document.getElementById('createPrivateRoomBtn');
+    createPrivateRoomBtn.addEventListener('click', createPrivateRoom);
+
+    // 방 참가 버튼 클릭 이벤트
+    let joinRoomBtn = document.getElementById('joinRoomBtn');
+    joinRoomBtn.addEventListener('click', function () {
+      let roomId = joinRoomName.value;
+      if (roomId.trim() !== '') {
+        joinRoom(roomId);
+      } else {
+        alert('방 이름이나 코드를 입력해 주세요.');
+      }
+    });
+
+    // 방 나가기 버튼 이벤트 처리
+    let leaveRoomBtn = document.getElementById('leaveRoomBtn');
+    leaveRoomBtn.addEventListener('click', function (){
+      destroy();
+      connect();      // 소캣 재연결
+    });
+
+    // 채팅 메시지 전송 이벤트
+    let chatInput = document.querySelector('.chat-input');
+    chatInput.addEventListener('submit', function(event) {
+      event.preventDefault();
+      let chatInputText = document.querySelector('.chat-input-text');
+      if (chatInputText.value.trim() !== '') {
+        sendChatMessage(chatInputText.value);
+      }
+      chatInputText.value = '';
+    });
+  };
+
+  window.onbeforeunload = function (event) {
+    event.preventDefault();
+    destroy();
+  }
+
+  function destroy() {
+    stompClient.send("/app/leaveRoom/" + roomId + "/" + clientId, {});
+    isSubscribeRoomChat = false;  // 방 채팅 메시지 구독 가능하게 설정
+    roomId = null;                // roomId 초기화
+    clientRoomId = null;          // 방 아이디 초기화
+    clientRoomIdDiv.innerHTML = '';
+    disconnect();                 // 소캣 연결 해제
+    clearChat();                  // 채팅창 클리어
+  }
+</script>
+</body>
+</html>
